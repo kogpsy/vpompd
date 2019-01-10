@@ -19,17 +19,30 @@ xlabel!("Prior belief about temperature")
 # inference model
 @model infer_temperture(y) = begin
     N = length(y)
+
     # prior on measurement noise
     σ ~ Truncated(Cauchy(0, 2), 0, Inf)
     # prior on temperature
-    temperature ~ Normal(0, 20)
+    μ ~ Normal(0, 20)
 
     # observations
     for i ∈ 1:N
-        y[i] ~ Normal(temperature, σ)
+        y[i] ~ Normal(μ, σ)
     end
+    return μ, σ
 end
 
-temp_samples = sample(infer_temperture(measurements), SMC(300))
+# P(μ | y) ∝ P(y | μ) * P(μ)
+# algorithm1 = NUTS(1000,  0.65)
+algorithm = SMC(3000)
 
-mean(temp_samples[:temperature])
+temp_samples = sample(infer_temperture(measurements), algorithm)
+
+
+histogram(temp_samples[:σ])
+plot(temp_samples[:σ])
+plot(temp_samples[:μ])
+
+
+mean(temp_samples[:μ])
+mean(temp_samples[:σ])
